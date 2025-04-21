@@ -10,19 +10,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    services:
-      web:
-        image: nginx:alpine
-        ports:
-          - 8080:80
-        volumes:
-          - .:/usr/share/nginx/html:ro
-        options: >-
-          --health-cmd="curl --fail http://localhost:8080 || exit 1"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
     steps:
       - name: Checkout código
         uses: actions/checkout@v4
@@ -35,10 +22,19 @@ jobs:
       - name: Instalar dependencias
         run: npm install
 
-      - name: Esperar que el servidor esté listo
+      - name: Instalar Docker (solo para asegurarse)
         run: |
-          echo "Esperando a que NGINX esté listo..."
+          sudo apt-get update
+          sudo apt-get install -y docker.io
+          sudo systemctl start docker
+
+      - name: Construir imagen Docker
+        run: docker build -t practica-devops .
+
+      - name: Ejecutar contenedor Docker
+        run: |
+          docker run -d -p 8080:80 --name web practica-devops
           sleep 10
 
-      - name: Ejecutar pruebas unitarias
+      - name: Ejecutar pruebas unitarias con Jest
         run: npm test
