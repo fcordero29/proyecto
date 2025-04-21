@@ -1,0 +1,28 @@
+name: CI para Pruebas Unitarias
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Construir y ejecutar contenedor Docker
+        run: |
+          docker build -t practica-devops .
+          docker run -d -p 8080:80 practica-devops
+          sleep 5
+
+      - name: Ejecutar pruebas unitarias
+        run: npm test
