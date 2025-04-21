@@ -3,14 +3,31 @@ name: CI para Pruebas Unitarias
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Instalar Node.js
+    services:
+      web:
+        image: nginx:alpine
+        ports:
+          - 8080:80
+        volumes:
+          - .:/usr/share/nginx/html:ro
+        options: >-
+          --health-cmd="curl --fail http://localhost:8080 || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -18,11 +35,10 @@ jobs:
       - name: Instalar dependencias
         run: npm install
 
-      - name: Construir y ejecutar contenedor Docker
+      - name: Esperar que el servidor esté listo
         run: |
-          docker build -t practica-devops .
-          docker run -d -p 8080:80 practica-devops
-          sleep 5
+          echo "Esperando a que NGINX esté listo..."
+          sleep 10
 
       - name: Ejecutar pruebas unitarias
         run: npm test
